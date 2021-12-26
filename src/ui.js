@@ -377,7 +377,7 @@ function R(e) {
 
   for (var s = 0; s < i.length; s++) {
     o[e.updated[s].chapterUid] = o[e.updated[s].chapterUid] || {
-      title: "",
+      title: "NO TITLE",
       texts: []
     };
 
