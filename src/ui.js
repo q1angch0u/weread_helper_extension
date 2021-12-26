@@ -267,10 +267,30 @@ async function fetchNotes(bookIds) {
   }
 
   console.log(' 294: notes.length = ', JSON.stringify(notes.length))
-  debugger
-  return notes
+  // debugger
+  // return notes
+  exportTextNotes(notes)
 }
 
+function exportTextNotes(notes) {
+    notes.forEach((function(e) {
+        var t = R(e)
+          , o = "".concat(e.book.title, "\n").concat(e.book.author, "\n\n");
+        t.notes.forEach((function(e) {
+            o += "\n\u25c6 ".concat(e[1].title, "\n\n"),
+            e[1].texts.forEach((function(e) {
+                o += ">> ".concat(e, "\n\n")
+            }
+            ))
+        }
+        ));
+        var a = new Blob([o],{
+            type: "text/txt;charset=utf-8"
+        });
+        Object(I.saveAs)(a, "".concat(e.book.title, ".txt"))
+    }
+    ))
+}
 
 function _zudui(force) {
   let forceVid = null
