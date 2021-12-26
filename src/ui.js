@@ -274,12 +274,16 @@ async function fetchNotes(bookIds) {
 
     exportMarkdownNoteSingle(data)
   }
+
+  showToast('导出所有笔记完成')
+  console.log(' 278: 导出所有笔记完成')
 }
 
 function exportMarkdownNoteSingle(e) {
   const bookTitle = e.book.title;
   showToast('开始导出 ' + bookTitle + ' markdown 笔记')
 
+  console.log(' 286: e = ', JSON.stringify(e))
   let t
   try {
     t = R(e)
@@ -288,6 +292,7 @@ function exportMarkdownNoteSingle(e) {
     console.error(' error = ', error)
     return
   }
+  console.log(' 294: t = ', JSON.stringify(t))
 
   let o = "## ".concat(bookTitle, "\n\n **").concat(e.book.author, "**\n\n");
 
@@ -371,6 +376,11 @@ function R(e) {
   }));
 
   for (var s = 0; s < i.length; s++) {
+    o[e.updated[s].chapterUid] = o[e.updated[s].chapterUid] || {
+      title: "",
+      texts: []
+    };
+
     o[e.updated[s].chapterUid].texts.push(i[s].markText);
   }
 
