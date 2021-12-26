@@ -204,6 +204,8 @@ function shelfMakeBookPublic(bookIds) {
   }).then(resp => {
     return resp.json()
   }).then(data => {
+
+    console.log(' 208: data = ', JSON.stringify(data))
     bookIds.forEach(function(_id) {
       $(`#bookid-${_id} > .wr_bookCover > .wr_bookCover_privateTag`).remove()
     })
@@ -253,13 +255,19 @@ function sleep(ms) {
 
 
 async function fetchNotes(bookIds) {
+  console.log(' 258: bookIds = ', JSON.stringify(bookIds))
+
   let notes = []
+
   for(let i=0;i<bookIds.length;i++) {
     let resp = await fetch(`https://weread.qq.com/web/book/bookmarklist?bookId=${bookIds[i]}&type=1`)
     let data = await resp.json()
     notes.push(data)
     await sleep(500)
   }
+
+  console.log(' 294: notes.length = ', JSON.stringify(notes.length))
+  debugger
   return notes
 }
 
@@ -736,6 +744,7 @@ $(document).ready(function() {
       <a class="op m_webook_shelf_remove_book" style="padding: 5px 0; margin-right:10px; cursor: pointer; color: #5d646e; display:none;">移出</a>
       <a class="op m_webook_shelf_make_book_private" style="padding: 5px 0; margin-right:10px; cursor: pointer; color: #5d646e; display:none;">私密阅读</a>
       <a class="op m_webook_shelf_make_book_public" style="padding: 5px 0; margin-right:10px; cursor: pointer; color: #5d646e; display:none;">公开阅读</a>
+      <a class="op m_webook_shelf_get_bookmarks" style="padding: 5px 0; margin-right:10px; cursor: pointer; color: #5d646e; display:none;">导出笔记</a>
       <a class="op m_webook_shelf_select_all" style="padding: 5px 0; margin-right:10px; cursor: pointer; color: #5d646e; display:none;">全选</a>
     </div>
   `)
@@ -891,8 +900,24 @@ $(document).ready(function() {
         bookIds.push($(this).data('id').toString())
       }
     })
+
+    console.log(' 895: bookIds = ', JSON.stringify(bookIds))
     if (bookIds.length > 0) {
       shelfMakeBookPublic(bookIds)
+    }
+  })
+
+  $('.m_webook_shelf_get_bookmarks').click(function() {
+    let bookIds = []
+    $('.m_webook_shelf_checkbox > input').each(function() {
+      if ($(this).is(':checked')) {
+        bookIds.push($(this).data('id').toString())
+      }
+    })
+
+    console.log(' 912: bookIds = ', JSON.stringify(bookIds))
+    if (bookIds.length > 0) {
+      fetchNotes(bookIds)
     }
   })
 
