@@ -257,35 +257,36 @@ function sleep(ms) {
 async function fetchNotes(bookIds) {
   console.log(' 258: bookIds = ', JSON.stringify(bookIds))
 
-  let notes = []
-
-  for(let i=0;i<bookIds.length;i++) {
-    let resp = await fetch(`https://weread.qq.com/web/book/bookmarklist?bookId=${bookIds[i]}&type=1`)
+  for (const bookId of bookIds) {
+    console.log(' 261: bookId = ', JSON.stringify(bookId))
+    let resp = await fetch(`https://weread.qq.com/web/book/bookmarklist?bookId=${bookId}&type=1`)
     let data = await resp.json()
-    notes.push(data)
-    await sleep(500)
-  }
+    await sleep(1000)
 
-  console.log(' 294: notes.length = ', JSON.stringify(notes.length))
-  exportMarkdownNotes(notes)
+    const bookmarkListLength = data.updated.length;
+    console.log(' 266: bookmarkListLength = ', JSON.stringify(bookmarkListLength))
+
+    if (!Array.isArray(data.updated) || bookmarkListLength === 0) {
+      continue
+    }
+
+    exportMarkdownNoteSingle(data)
+  }
 }
 
-function exportMarkdownNotes(notes) {
-  showToast('开始导出 markdown 笔记')
-  notes.forEach((function (e) {
-    let t = R(e)
-    let o = "## ".concat(e.book.title, "\n\n **").concat(e.book.author, "**\n\n");
+function exportMarkdownNoteSingle(e) {
+  const bookTitle = e.book.title;
+  showToast('开始导出 ' + bookTitle + ' markdown 笔记')
 
-    t.notes.forEach((function (e) {
-        o += "\n### ".concat(e[1].title, "\n\n"),
-          e[1].texts.forEach((function (e) {
-              o += "* ".concat(e, "\n\n")
-            }
-          ))
-      }
-    ));
-    download(o, "".concat(e.book.title, ".md"), 'text/txt;charset=utf-8')
-  }))
+  let t = R(e)
+  let o = "## ".concat(bookTitle, "\n\n **").concat(e.book.author, "**\n\n");
+
+  t.notes.forEach((function (e) {
+    o += "\n### ".concat(e[1].title, "\n\n"), e[1].texts.forEach((function (e) {
+      o += "* ".concat(e, "\n\n")
+    }))
+  }));
+  download(o, "".concat(bookTitle, ".md"), 'text/txt;charset=utf-8')
 }
 
 /**
@@ -307,54 +308,64 @@ function download(data, filename, type) {
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-    setTimeout(function() {
+    setTimeout(function () {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     }, 0);
   }
 }
 
+function exportMarkdownNotes(notes) {
+  showToast('开始导出 markdown 笔记')
+  notes.forEach(e => exportMarkdownNoteSingle(e))
+}
+
 function exportTextNotes(notes) {
   showToast('开始导出 txt 笔记')
-  notes.forEach((function (e) {
-      let t = R(e)
-      let o = "".concat(e.book.title, "\n").concat(e.book.author, "\n\n");
-
-      t.notes.forEach((function (e) {
-          o += "\n\u25c6 ".concat(e[1].title, "\n\n"),
-            e[1].texts.forEach((function (e) {
-                o += ">> ".concat(e, "\n\n")
-              }
-            ))
-        }
-      ));
-
-      download(o, "".concat(e.book.title, ".txt"), 'text/txt;charset=utf-8')
-    }
-  ))
+  notes.forEach(e => exportTextNoteSingle(e))
 }
+
+function exportTextNoteSingle(e) {
+  const bookTitle = e.book.title;
+  showToast('开始导出 ' + bookTitle + ' text 笔记')
+
+  let t = R(e)
+  let o = "".concat(bookTitle, "\n").concat(e.book.author, "\n\n");
+
+  t.notes.forEach((function (e) {
+    o += "\n\u25c6 ".concat(e[1].title, "\n\n"), e[1].texts.forEach((function (e) {
+      o += ">> ".concat(e, "\n\n")
+    }))
+  }));
+
+  download(o, "".concat(bookTitle, ".txt"), 'text/txt;charset=utf-8')
+}
+
 function R(e) {
-  for (var t = [], o = {}, a = 0; a < e.chapters.length; a++)
-    o[e.chapters[a].chapterUid] = {
-      title: e.chapters[a].title,
-      texts: []
-    };
-  var i = e.updated;
+  for (var t = [], o = {}, a = 0; a < e.chapters.length; a++) o[e.chapters[a].chapterUid] = {
+    title: e.chapters[a].title,
+    texts: []
+  };
+
+  let i = e.updated;
   i.sort((function (e, t) {
-      return parseInt(e.range.split("-")[0]) - parseInt(t.range.split("-")[0])
+    return parseInt(e.range.split("-")[0]) - parseInt(t.range.split("-")[0])
+  }));
+
+  for (var s = 0; s < i.length; s++) {
+    if (!Array.isArray(o[e.updated[s].chapterUid].texts)) {
+      o[e.updated[s].chapterUid].texts = []
     }
-  ));
-  for (var s = 0; s < i.length; s++)
+
     o[e.updated[s].chapterUid].texts.push(i[s].markText);
+  }
+
   return (t = Object.keys(o).map((function (e) {
-      return [e, o[e]]
-    }
-  ))).sort((function (e, t) {
-      return e[0] - t[0]
-    }
-  )),
-    e.notes = t,
-    e
+    return [e, o[e]]
+  }))).sort((function (e, t) {
+    return e[0] - t[0]
+  })),
+  e.notes = t, e
 }
 
 function _zudui(force) {
@@ -994,16 +1005,19 @@ $(document).ready(function() {
 
   $('.m_webook_shelf_get_bookmarks').click(function() {
     let bookIds = []
-    $('.m_webook_shelf_checkbox > input').each(function() {
+    $('.m_webook_shelf_checkbox > input').each(function () {
       if ($(this).is(':checked')) {
         bookIds.push($(this).data('id').toString())
       }
     })
 
     console.log(' 912: bookIds = ', JSON.stringify(bookIds))
-    if (bookIds.length > 0) {
-      fetchNotes(bookIds)
+    if (bookIds.length === 0) {
+      showToast('未选中任何书本，无法导出笔记')
+      return
     }
+
+    fetchNotes(bookIds)
   })
 
   $('.m_webook_shelf_remove_book').click(function() {
