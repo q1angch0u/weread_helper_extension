@@ -267,60 +267,125 @@ async function fetchNotes(bookIds) {
   }
 
   console.log(' 294: notes.length = ', JSON.stringify(notes.length))
-  // debugger
-  // return notes
-  exportTextNotes(notes)
+  exportMarkdownNotes(notes)
+}
+
+function exportMarkdownNotes(notes) {
+  showToast('开始导出 markdown 笔记')
+  notes.forEach((function (e) {
+    let t = R(e)
+    let o = "## ".concat(e.book.title, "\n\n **").concat(e.book.author, "**\n\n");
+
+    t.notes.forEach((function (e) {
+        o += "\n### ".concat(e[1].title, "\n\n"),
+          e[1].texts.forEach((function (e) {
+              o += "* ".concat(e, "\n\n")
+            }
+          ))
+      }
+    ));
+    download(o, "".concat(e.book.title, ".md"), 'text/txt;charset=utf-8')
+  }))
+}
+
+/**
+ * JavaScript: Create and save file: https://stackoverflow.com/a/30832210
+ * Function to download data to a file
+ *
+ * @param data
+ * @param filename
+ * @param type
+ */
+function download(data, filename, type) {
+  const file = new Blob([data], {type: type});
+  if (window.navigator.msSaveOrOpenBlob) // IE10+
+    window.navigator.msSaveOrOpenBlob(file, filename);
+  else { // Others
+    const a = document.createElement("a"),
+      url = URL.createObjectURL(file);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 0);
+  }
 }
 
 function exportTextNotes(notes) {
-    notes.forEach((function(e) {
-        var t = R(e)
-          , o = "".concat(e.book.title, "\n").concat(e.book.author, "\n\n");
-        t.notes.forEach((function(e) {
-            o += "\n\u25c6 ".concat(e[1].title, "\n\n"),
-            e[1].texts.forEach((function(e) {
+  showToast('开始导出 txt 笔记')
+  notes.forEach((function (e) {
+      let t = R(e)
+      let o = "".concat(e.book.title, "\n").concat(e.book.author, "\n\n");
+
+      t.notes.forEach((function (e) {
+          o += "\n\u25c6 ".concat(e[1].title, "\n\n"),
+            e[1].texts.forEach((function (e) {
                 o += ">> ".concat(e, "\n\n")
-            }
+              }
             ))
         }
-        ));
-        var a = new Blob([o],{
-            type: "text/txt;charset=utf-8"
-        });
-        Object(I.saveAs)(a, "".concat(e.book.title, ".txt"))
+      ));
+
+      download(o, "".concat(e.book.title, ".txt"), 'text/txt;charset=utf-8')
     }
-    ))
+  ))
+}
+function R(e) {
+  for (var t = [], o = {}, a = 0; a < e.chapters.length; a++)
+    o[e.chapters[a].chapterUid] = {
+      title: e.chapters[a].title,
+      texts: []
+    };
+  var i = e.updated;
+  i.sort((function (e, t) {
+      return parseInt(e.range.split("-")[0]) - parseInt(t.range.split("-")[0])
+    }
+  ));
+  for (var s = 0; s < i.length; s++)
+    o[e.updated[s].chapterUid].texts.push(i[s].markText);
+  return (t = Object.keys(o).map((function (e) {
+      return [e, o[e]]
+    }
+  ))).sort((function (e, t) {
+      return e[0] - t[0]
+    }
+  )),
+    e.notes = t,
+    e
 }
 
 function _zudui(force) {
   let forceVid = null
 
-  fetch('https://weread.qq.com/wrpage/huodong/abtest/zudui').then(function(resp) {
+  fetch('https://weread.qq.com/wrpage/huodong/abtest/zudui').then(function (resp) {
     return resp.text()
-  }).then(function(data) {
-      let doc = $(data)
-      let memberCount = 0
-      doc.find('.members_list > div.wr_avatar').each(function(idx) {
-        let vid = $(this).data('vid')
-        if (vid) {
-          memberCount += 1
-        }
-        if (idx == 0 && vid) {
-          forceVid = vid
-        }
-      })
-      if (force && memberCount != 5) {
-        if (!forceVid) {
-          let _m = data.match(/data \+= '&vid=' \+ encodeURIComponent\('(.*)'\)/)
+  }).then(function (data) {
+    let doc = $(data)
+    let memberCount = 0
+    doc.find('.members_list > div.wr_avatar').each(function (idx) {
+      let vid = $(this).data('vid')
+      if (vid) {
+        memberCount += 1
+      }
+      if (idx == 0 && vid) {
+        forceVid = vid
+      }
+    })
+    if (force && memberCount != 5) {
+      if (!forceVid) {
+        let _m = data.match(/data \+= '&vid=' \+ encodeURIComponent\('(.*)'\)/)
+        if (_m) {
+          forceVid = _m[1]
+        } else {
+          _m = ak.match(/<script>config\.vid = \+'(.*)'<\/script>/)
           if (_m) {
             forceVid = _m[1]
-          } else {
-            _m = ak.match(/<script>config\.vid = \+'(.*)'<\/script>/)
-            if (_m) {
-              forceVid = _m[1]
-            }
           }
         }
+      }
         if (forceVid) {
           console.log('**forceVid**', forceVid)
           $.ajax({
