@@ -262,6 +262,8 @@ async function fetchNotes(bookIds) {
     let resp = await fetch(`https://weread.qq.com/web/book/bookmarklist?bookId=${bookId}&type=1`)
     let data = await resp.json()
     await sleep(1000)
+    const bookTitle = data.book.title
+    console.log(' 266: bookTitle = ', JSON.stringify(bookTitle))
 
     const bookmarkListLength = data.updated.length;
     console.log(' 266: bookmarkListLength = ', JSON.stringify(bookmarkListLength))
@@ -282,7 +284,7 @@ function exportMarkdownNoteSingle(e) {
   try {
     t = R(e)
   } catch (error) {
-    showToast('导出 ' + bookTitle + ' markdown 笔记失败')
+    console.error('导出 ' + bookTitle + ' markdown 笔记失败')
     console.error(' error = ', error)
     return
   }
@@ -341,7 +343,7 @@ function exportTextNoteSingle(e) {
   try {
     t = R(e)
   } catch (error) {
-    showToast('导出 ' + bookTitle + ' text 笔记失败')
+    console.error('导出 ' + bookTitle + ' text 笔记失败')
     console.error(' error = ', error)
     return
   }
