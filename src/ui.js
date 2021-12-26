@@ -278,7 +278,15 @@ function exportMarkdownNoteSingle(e) {
   const bookTitle = e.book.title;
   showToast('开始导出 ' + bookTitle + ' markdown 笔记')
 
-  let t = R(e)
+  let t
+  try {
+    t = R(e)
+  } catch (error) {
+    showToast('导出 ' + bookTitle + ' markdown 笔记失败')
+    console.error(' error = ', error)
+    return
+  }
+
   let o = "## ".concat(bookTitle, "\n\n **").concat(e.book.author, "**\n\n");
 
   t.notes.forEach((function (e) {
@@ -329,7 +337,15 @@ function exportTextNoteSingle(e) {
   const bookTitle = e.book.title;
   showToast('开始导出 ' + bookTitle + ' text 笔记')
 
-  let t = R(e)
+  let t
+  try {
+    t = R(e)
+  } catch (error) {
+    showToast('导出 ' + bookTitle + ' text 笔记失败')
+    console.error(' error = ', error)
+    return
+  }
+
   let o = "".concat(bookTitle, "\n").concat(e.book.author, "\n\n");
 
   t.notes.forEach((function (e) {
@@ -353,10 +369,6 @@ function R(e) {
   }));
 
   for (var s = 0; s < i.length; s++) {
-    if (!Array.isArray(o[e.updated[s].chapterUid].texts)) {
-      o[e.updated[s].chapterUid].texts = []
-    }
-
     o[e.updated[s].chapterUid].texts.push(i[s].markText);
   }
 
