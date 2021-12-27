@@ -278,39 +278,45 @@ async function fetchNotes(bookIds) {
 
   for (const bookId of bookIds) {
     console.log(' 275: bookId = ', JSON.stringify(bookId))
-    let resp = await fetch(`https://weread.qq.com/web/book/bookmarklist?bookId=${bookId}&type=1`)
-    let data = await resp.json()
+    let bookmarkResp = await fetch(`https://weread.qq.com/web/book/bookmarklist?bookId=${bookId}&type=1`)
+    let bookmarkData = await bookmarkResp.json()
     await sleep(1000)
 
-    let newRespAddress = await fetch(`https://weread.qq.com/web/review/list?bookId=${bookId}&listType=11&maxIdx=0&count=0&listMode=2&synckey=0&userVid=${userVid}&mine=1`)
-    let newDataFormat = await newRespAddress.json()
-    console.log(' 282: newDataFormat = ', JSON.stringify(newDataFormat))
+    let ideaResp = await fetch(`https://weread.qq.com/web/review/list?bookId=${bookId}&listType=11&maxIdx=0&count=0&listMode=2&synckey=0&userVid=${userVid}&mine=1`)
+    let ideaData = await ideaResp.json()
+    console.log(' 282: ideaData = ', JSON.stringify(ideaData))
 
-    const bookTitle = data.book.title
+    const bookTitle = bookmarkData.book.title
     console.log(' 285: bookTitle = ', JSON.stringify(bookTitle))
 
-    const bookmarkListLength = data.updated.length;
+    const bookmarkListLength = bookmarkData.updated.length;
     console.log(' 288: bookmarkListLength = ', JSON.stringify(bookmarkListLength))
 
-    if (!Array.isArray(data.updated) || bookmarkListLength === 0) {
-      continue
+    const ideaDataTotalCount = ideaData.totalCount
+    console.log(' 296: ideaDataTotalCount = ', JSON.stringify(ideaDataTotalCount))
+
+    if (Array.isArray(bookmarkData.updated) && bookmarkListLength && ideaDataTotalCount) {
+      exportBookmarkAndIdeaMarkdownNote(bookmarkData, ideaData)
+    } else if (Array.isArray(bookmarkData.updated) && bookmarkListLength) {
+      exportBookmarkMarkdownNote(bookmarkData)
+    } else if (ideaDataTotalCount) {
+      exportIdeaDataMarkdownNote(ideaData)
     }
 
-    exportMarkdownNoteSingle(data)
   }
 
   showToast('导出所有笔记完成')
   console.log(' 298: 导出所有笔记完成')
 }
 
-function exportMarkdownNoteSingle(e) {
-  const bookTitle = e.book.title;
+function exportBookmarkAndIdeaMarkdownNote(bookmarkData, ideaData) {
+  const bookTitle = bookmarkData.book.title;
   showToast('开始导出 ' + bookTitle + ' markdown 笔记')
 
-  console.log(' 305: e = ', JSON.stringify(e))
+  console.log(' 305: bookmarkData = ', JSON.stringify(bookmarkData))
   let t
   try {
-    t = R(e)
+    t = processBookmarkData(bookmarkData)
   } catch (error) {
     console.error('导出 ' + bookTitle + ' markdown 笔记失败')
     console.error(' error = ', error)
@@ -318,7 +324,7 @@ function exportMarkdownNoteSingle(e) {
   }
   console.log(' 314: t = ', JSON.stringify(t))
 
-  let o = "## ".concat(bookTitle, "\n\n **").concat(e.book.author, "**\n\n");
+  let o = "## ".concat(bookTitle, "\n\n **").concat(bookmarkData.book.author, "**\n\n");
 
   t.notes.forEach((function (e) {
     o += "\n### ".concat(e[1].title, "\n\n"), e[1].texts.forEach((function (e) {
@@ -326,6 +332,107 @@ function exportMarkdownNoteSingle(e) {
     }))
   }));
   download(o, "".concat(bookTitle, ".md"), 'text/txt;charset=utf-8')
+}
+
+function exportBookmarkMarkdownNote(bookmarkData) {
+  const bookTitle = bookmarkData.book.title;
+  showToast('开始导出 ' + bookTitle + ' markdown 笔记')
+
+  console.log(' 305: bookmarkData = ', JSON.stringify(bookmarkData))
+  let t
+  try {
+    t = processBookmarkData(bookmarkData)
+  } catch (error) {
+    console.error('导出 ' + bookTitle + ' markdown 笔记失败')
+    console.error(' error = ', error)
+    return
+  }
+  console.log(' 314: t = ', JSON.stringify(t))
+
+  let context = "## ".concat(bookTitle, "\n\n **").concat(bookmarkData.book.author, "**\n\n");
+
+  t.notes.forEach((function (e) {
+    context += "\n### ".concat(e[1].title, "\n\n");
+
+    e[1].texts.forEach((function (e) {
+      context += "* ".concat(e, "\n\n")
+    }))
+  }));
+  download(context, "".concat(bookTitle, ".md"), 'text/txt;charset=utf-8')
+}
+
+function exportIdeaDataMarkdownNote(ideaData) {
+  ideaData.reviews = ideaData.reviews.reverse()
+  const bookTitle = ideaData.reviews[0].review.book.title;
+  const bookAuthor = ideaData.reviews[0].review.book.author;
+  showToast('开始导出 ' + bookTitle + ' idea markdown 笔记')
+
+  console.log(' 364: order ideaData = ', JSON.stringify(ideaData))
+  let ideaMap
+  try {
+    ideaMap = processIdeaData(ideaData)
+  } catch (error) {
+    console.error('导出 ' + bookTitle + ' idea markdown 笔记失败')
+    console.error(' error = ', error)
+    return
+  }
+  console.log(' 314: ideaMap = ', ideaMap)
+
+  let context = "## ".concat(bookTitle, "\n\n **").concat(bookAuthor, "**\n\n");
+
+  for (let [key, value] of ideaMap) {
+    context += "\n### ".concat(key, "\n\n");
+
+    value.forEach((function (e) {
+      context += "* ".concat(e[0] + '  （个人笔记: ' + e[1] + '）', "\n\n")
+    }))
+  }
+
+  download(context, "".concat(bookTitle, ".md"), 'text/txt;charset=utf-8')
+}
+
+function processIdeaData(ideaData) {
+  const map = new Map();
+  ideaData.reviews.forEach((item) => {
+    const chapterTitle = item.review.chapterTitle
+    const oneIdea = [item.review.abstract, item.review.content]
+    const chapterIdeaArray = map.get(chapterTitle)
+
+    if (!chapterIdeaArray) {
+      map.set(chapterTitle, [oneIdea])
+    } else {
+      chapterIdeaArray.push(oneIdea)
+    }
+  })
+  return map
+}
+
+function processBookmarkData(e) {
+  for (var t = [], o = {}, a = 0; a < e.chapters.length; a++) o[e.chapters[a].chapterUid] = {
+    title: e.chapters[a].title,
+    texts: []
+  };
+
+  let i = e.updated;
+  i.sort((function (e, t) {
+    return parseInt(e.range.split("-")[0]) - parseInt(t.range.split("-")[0])
+  }));
+
+  for (var s = 0; s < i.length; s++) {
+    o[e.updated[s].chapterUid] = o[e.updated[s].chapterUid] || {
+      title: "NO TITLE",
+      texts: []
+    };
+
+    o[e.updated[s].chapterUid].texts.push(i[s].markText);
+  }
+
+  return (t = Object.keys(o).map((function (e) {
+    return [e, o[e]]
+  }))).sort((function (e, t) {
+    return e[0] - t[0]
+  })),
+    e.notes = t, e
 }
 
 /**
@@ -354,30 +461,20 @@ function download(data, filename, type) {
   }
 }
 
-function exportMarkdownNotes(notes) {
-  showToast('开始导出 markdown 笔记')
-  notes.forEach(e => exportMarkdownNoteSingle(e))
-}
-
-function exportTextNotes(notes) {
-  showToast('开始导出 txt 笔记')
-  notes.forEach(e => exportTextNoteSingle(e))
-}
-
-function exportTextNoteSingle(e) {
-  const bookTitle = e.book.title;
+function exportBookmarkTextNote(bookmarkData) {
+  const bookTitle = bookmarkData.book.title;
   showToast('开始导出 ' + bookTitle + ' text 笔记')
 
   let t
   try {
-    t = R(e)
+    t = processBookmarkData(bookmarkData)
   } catch (error) {
     console.error('导出 ' + bookTitle + ' text 笔记失败')
     console.error(' error = ', error)
     return
   }
 
-  let o = "".concat(bookTitle, "\n").concat(e.book.author, "\n\n");
+  let o = "".concat(bookTitle, "\n").concat(bookmarkData.book.author, "\n\n");
 
   t.notes.forEach((function (e) {
     o += "\n\u25c6 ".concat(e[1].title, "\n\n"), e[1].texts.forEach((function (e) {
@@ -386,34 +483,6 @@ function exportTextNoteSingle(e) {
   }));
 
   download(o, "".concat(bookTitle, ".txt"), 'text/txt;charset=utf-8')
-}
-
-function R(e) {
-  for (var t = [], o = {}, a = 0; a < e.chapters.length; a++) o[e.chapters[a].chapterUid] = {
-    title: e.chapters[a].title,
-    texts: []
-  };
-
-  let i = e.updated;
-  i.sort((function (e, t) {
-    return parseInt(e.range.split("-")[0]) - parseInt(t.range.split("-")[0])
-  }));
-
-  for (var s = 0; s < i.length; s++) {
-    o[e.updated[s].chapterUid] = o[e.updated[s].chapterUid] || {
-      title: "NO TITLE",
-      texts: []
-    };
-
-    o[e.updated[s].chapterUid].texts.push(i[s].markText);
-  }
-
-  return (t = Object.keys(o).map((function (e) {
-    return [e, o[e]]
-  }))).sort((function (e, t) {
-    return e[0] - t[0]
-  })),
-  e.notes = t, e
 }
 
 function _zudui(force) {
