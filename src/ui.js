@@ -284,7 +284,6 @@ async function fetchNotes(bookIds) {
 
     let ideaResp = await fetch(`https://weread.qq.com/web/review/list?bookId=${bookId}&listType=11&maxIdx=0&count=0&listMode=2&synckey=0&userVid=${userVid}&mine=1`)
     let ideaData = await ideaResp.json()
-    console.log(' 282: ideaData = ', JSON.stringify(ideaData))
 
     const bookTitle = bookmarkData.book.title
     console.log(' 285: bookTitle = ', JSON.stringify(bookTitle))
@@ -313,7 +312,6 @@ function exportBookmarkAndIdeaMarkdownNote(bookmarkData, ideaData) {
   const bookTitle = bookmarkData.book.title;
   showToast('开始导出 ' + bookTitle + ' markdown 笔记')
 
-  console.log(' 305: bookmarkData = ', JSON.stringify(bookmarkData))
   let t
   try {
     t = processBookmarkData(bookmarkData)
@@ -322,9 +320,18 @@ function exportBookmarkAndIdeaMarkdownNote(bookmarkData, ideaData) {
     console.error(' error = ', error)
     return
   }
-  console.log(' 314: t = ', JSON.stringify(t))
 
-  ideaData.reviews = ideaData.reviews.reverse()
+  let context = "# ".concat(bookTitle, "\n\n **").concat(bookmarkData.book.author, "**\n\n");
+  context += "\n## 划线部分\n\n";
+
+  t.notes.forEach((function (e) {
+    context += "\n### ".concat(e[1].title, "\n\n");
+
+    e[1].texts.forEach((function (e) {
+      context += "* ".concat(e, "\n\n")
+    }))
+  }));
+
   let ideaMap
   try {
     ideaMap = processIdeaData(ideaData)
@@ -334,46 +341,15 @@ function exportBookmarkAndIdeaMarkdownNote(bookmarkData, ideaData) {
     return
   }
   console.log(' 314: ideaMap = ', ideaMap)
+  context += "\n## 个人笔记部分\n\n";
 
-  let context = "## ".concat(bookTitle, "\n\n **").concat(bookmarkData.book.author, "**\n\n");
+  for (let [key, value] of ideaMap) {
+    context += "\n### ".concat(key, "\n\n");
 
-  t.notes.forEach((function (e) {
-    const chapterTitle = e[1].title
-    const chapterIdeaArray = ideaMap.get(chapterTitle)
-    const prueChapterIdeaArray = JSON.parse(JSON.stringify(chapterIdeaArray))
-    context += "\n### ".concat(chapterTitle, "\n\n");
-
-    if (!Array.isArray(chapterIdeaArray)) {
-      e[1].texts.forEach((function (e) {
-        context += "* ".concat(e, "\n\n")
-      }))
-    } else {
-      e[1].texts.forEach((function (e) {
-          let withIdea = false
-
-          for (let index = 0; index < chapterIdeaArray.length; ++index) {
-            const chapterIdea = chapterIdeaArray[index];
-            if (e === chapterIdea[0]) {
-              context += "* ".concat(chapterIdea[0] + '  （个人笔记: ' + chapterIdea[1] + '）', "\n\n")
-              withIdea = true
-              prueChapterIdeaArray.splice(index, 1)
-              break
-            }
-          }
-
-          if (!withIdea) {
-            context += "* ".concat(e, "\n\n")
-          }
-        }))
-
-      if (prueChapterIdeaArray.length) {
-        prueChapterIdeaArray.forEach((function (e) {
-          context += "* ".concat(e[0] + '  （个人笔记: ' + e[1] + '）', "\n\n")
-        }))
-      }
-    }
-
-  }));
+    value.forEach((function (e) {
+      context += "* ".concat(e[0] + '  （个人笔记: ' + e[1] + '）', "\n\n")
+    }))
+  }
 
   download(context, "".concat(bookTitle, ".md"), 'text/txt;charset=utf-8')
 }
@@ -406,12 +382,11 @@ function exportBookmarkMarkdownNote(bookmarkData) {
 }
 
 function exportIdeaDataMarkdownNote(ideaData) {
-  ideaData.reviews = ideaData.reviews.reverse()
+  console.log(' 364: ideaData = ', JSON.stringify(ideaData))
   const bookTitle = ideaData.reviews[0].review.book.title;
   const bookAuthor = ideaData.reviews[0].review.book.author;
   showToast('开始导出 ' + bookTitle + ' idea markdown 笔记')
 
-  console.log(' 364: order ideaData = ', JSON.stringify(ideaData))
   let ideaMap
   try {
     ideaMap = processIdeaData(ideaData)
@@ -436,6 +411,10 @@ function exportIdeaDataMarkdownNote(ideaData) {
 }
 
 function processIdeaData(ideaData) {
+  ideaData.reviews.sort((a, b) => {
+    return parseInt(a.review.range.split("-")[0]) - parseInt(b.review.range.split("-")[0])
+  })
+
   const map = new Map();
   ideaData.reviews.forEach((item) => {
     const chapterTitle = item.review.chapterTitle
