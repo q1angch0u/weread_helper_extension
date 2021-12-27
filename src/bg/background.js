@@ -303,6 +303,10 @@ chrome.webRequest.onBeforeRequest.addListener(
   function(obj) {
     console.log('**userVid**', obj.url)
     chrome.storage.local.set({viduri: obj.url})
+
+    const wrUserVid = obj.url.split('?')[1].split('=')[1]
+    console.log(' 308: wrUserVid = ', JSON.stringify(wrUserVid))
+    chrome.storage.local.set({'wrUserVid': wrUserVid})
     return {redirectUrl: obj.url}
   }, {
     urls: [

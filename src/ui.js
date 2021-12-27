@@ -8,6 +8,24 @@ const homePage = 'https://weread.qq.com/'
 const shelfPage = 'https://weread.qq.com/web/shelf'
 const bookPage = '/web/reader/'
 
+/**
+ * readLocalStorage
+ *
+ * @param key
+ * @returns {Promise<unknown>}
+ */
+const readLocalStorage = async (key) => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get([key], function (result) {
+      if (result[key] === undefined) {
+        reject();
+      } else {
+        resolve(result[key]);
+      }
+    });
+  });
+};
+
 
 var shelfdict = {}
 
@@ -253,20 +271,26 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
 async function fetchNotes(bookIds) {
-  console.log(' 258: bookIds = ', JSON.stringify(bookIds))
+  console.log(' 257: bookIds = ', JSON.stringify(bookIds))
+  const userVid = await readLocalStorage('wrUserVid')
+  console.log(' 272: userVid = ', JSON.stringify(userVid))
 
   for (const bookId of bookIds) {
-    console.log(' 261: bookId = ', JSON.stringify(bookId))
+    console.log(' 275: bookId = ', JSON.stringify(bookId))
     let resp = await fetch(`https://weread.qq.com/web/book/bookmarklist?bookId=${bookId}&type=1`)
     let data = await resp.json()
     await sleep(1000)
+
+    let newRespAddress = await fetch(`https://weread.qq.com/web/review/list?bookId=${bookId}&listType=11&maxIdx=0&count=0&listMode=2&synckey=0&userVid=${userVid}&mine=1`)
+    let newDataFormat = await newRespAddress.json()
+    console.log(' 282: newDataFormat = ', JSON.stringify(newDataFormat))
+
     const bookTitle = data.book.title
-    console.log(' 266: bookTitle = ', JSON.stringify(bookTitle))
+    console.log(' 285: bookTitle = ', JSON.stringify(bookTitle))
 
     const bookmarkListLength = data.updated.length;
-    console.log(' 266: bookmarkListLength = ', JSON.stringify(bookmarkListLength))
+    console.log(' 288: bookmarkListLength = ', JSON.stringify(bookmarkListLength))
 
     if (!Array.isArray(data.updated) || bookmarkListLength === 0) {
       continue
@@ -276,14 +300,14 @@ async function fetchNotes(bookIds) {
   }
 
   showToast('导出所有笔记完成')
-  console.log(' 278: 导出所有笔记完成')
+  console.log(' 298: 导出所有笔记完成')
 }
 
 function exportMarkdownNoteSingle(e) {
   const bookTitle = e.book.title;
   showToast('开始导出 ' + bookTitle + ' markdown 笔记')
 
-  console.log(' 286: e = ', JSON.stringify(e))
+  console.log(' 305: e = ', JSON.stringify(e))
   let t
   try {
     t = R(e)
@@ -292,7 +316,7 @@ function exportMarkdownNoteSingle(e) {
     console.error(' error = ', error)
     return
   }
-  console.log(' 294: t = ', JSON.stringify(t))
+  console.log(' 314: t = ', JSON.stringify(t))
 
   let o = "## ".concat(bookTitle, "\n\n **").concat(e.book.author, "**\n\n");
 
@@ -1021,7 +1045,7 @@ $(document).ready(function() {
       }
     })
 
-    console.log(' 895: bookIds = ', JSON.stringify(bookIds))
+    console.log(' 1043: bookIds = ', JSON.stringify(bookIds))
     if (bookIds.length > 0) {
       shelfMakeBookPublic(bookIds)
     }
@@ -1035,7 +1059,7 @@ $(document).ready(function() {
       }
     })
 
-    console.log(' 912: bookIds = ', JSON.stringify(bookIds))
+    console.log(' 1057: bookIds = ', JSON.stringify(bookIds))
     if (bookIds.length === 0) {
       showToast('未选中任何书本，无法导出笔记')
       return
