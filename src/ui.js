@@ -347,7 +347,11 @@ function exportBookmarkAndIdeaMarkdownNote(bookmarkData, ideaData) {
     context += "\n### ".concat(key, "\n\n");
 
     value.forEach((function (e) {
-      context += "* ".concat(e[0] + '  （个人笔记: ' + e[1] + '）', "\n\n")
+      if (e[0]) {
+        context += "* ".concat(e[0] + '  （个人笔记: ' + e[1] + '）', "\n\n")
+      } else {
+        context += "* ".concat(e[1], "\n\n")
+      }
     }))
   }
 
@@ -382,7 +386,6 @@ function exportBookmarkMarkdownNote(bookmarkData) {
 }
 
 function exportIdeaDataMarkdownNote(ideaData) {
-  console.log(' 364: ideaData = ', JSON.stringify(ideaData))
   const bookTitle = ideaData.reviews[0].review.book.title;
   const bookAuthor = ideaData.reviews[0].review.book.author;
   showToast('开始导出 ' + bookTitle + ' idea markdown 笔记')
@@ -402,7 +405,11 @@ function exportIdeaDataMarkdownNote(ideaData) {
     context += "\n### ".concat(key, "\n\n");
 
     value.forEach((function (e) {
-      context += "* ".concat(e[0] + '  （个人笔记: ' + e[1] + '）', "\n\n")
+      if (e[0]) {
+        context += "* ".concat(e[0] + '  （个人笔记: ' + e[1] + '）', "\n\n")
+      } else {
+        context += "* ".concat(e[1], "\n\n")
+      }
     }))
   }
 
@@ -418,8 +425,9 @@ function processIdeaData(ideaData) {
   const map = new Map();
 
   ideaData.reviews.forEach((item) => {
-    const chapterTitle = item.review.chapterTitle
-    const oneIdea = [item.review.abstract, item.review.content]
+    const chapterTitle = item.review.chapterTitle || '最终点评'
+    const abstract = item.review.abstract || ''
+    const oneIdea = [abstract, item.review.content]
     const chapterIdeaArray = map.get(chapterTitle)
 
     if (!chapterIdeaArray) {
