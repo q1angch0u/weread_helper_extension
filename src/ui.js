@@ -281,7 +281,7 @@ async function fetchNotes(bookIds) {
     console.log(' 275: bookId = ', JSON.stringify(bookId))
     let bookmarkResp = await fetch(`https://weread.qq.com/web/book/bookmarklist?bookId=${bookId}&type=1`)
     let bookmarkData = await bookmarkResp.json()
-    await sleep(1000)
+    await sleep(500)
 
     let ideaResp = await fetch(`https://weread.qq.com/web/review/list?bookId=${bookId}&listType=11&maxIdx=0&count=0&listMode=2&synckey=0&userVid=${userVid}&mine=1`)
     let ideaData = await ideaResp.json()
@@ -427,7 +427,8 @@ function processIdeaData(ideaData) {
   ideaData.reviews.forEach((item) => {
     const chapterTitle = item.review.chapterTitle || '最终点评'
     const abstract = item.review.abstract || ''
-    const oneIdea = [abstract, item.review.content]
+    const review = item.review.content || '😄 个人觉得推荐'
+    const oneIdea = [abstract, review]
     const chapterIdeaArray = map.get(chapterTitle)
 
     if (!chapterIdeaArray) {
