@@ -17,10 +17,11 @@ const bookPage = '/web/reader/'
 const readLocalStorage = async (key) => {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get([key], function (result) {
-      if (result[key] === undefined) {
+      const value = result[key]
+      if (!value) {
         reject();
       } else {
-        resolve(result[key]);
+        resolve(value);
       }
     });
   });
