@@ -341,7 +341,6 @@ function exportBookmarkAndIdeaMarkdownNote(bookmarkData, ideaData) {
     console.error(' error = ', error)
     return
   }
-  console.log(' 314: ideaMap = ', ideaMap)
   context += "\n## 个人笔记部分\n\n";
 
   for (let [key, value] of ideaMap) {
@@ -396,7 +395,6 @@ function exportIdeaDataMarkdownNote(ideaData) {
     console.error(' error = ', error)
     return
   }
-  console.log(' 314: ideaMap = ', ideaMap)
 
   let context = "## ".concat(bookTitle, "\n\n **").concat(bookAuthor, "**\n\n");
 
@@ -413,10 +411,12 @@ function exportIdeaDataMarkdownNote(ideaData) {
 
 function processIdeaData(ideaData) {
   ideaData.reviews.sort((a, b) => {
-    return parseInt(a.review.range.split("-")[0]) - parseInt(b.review.range.split("-")[0])
+    return getRangeLeft(a.review.range) - getRangeLeft(b.review.range)
   })
 
+  console.log(' 419: ideaData = ', JSON.stringify(ideaData))
   const map = new Map();
+
   ideaData.reviews.forEach((item) => {
     const chapterTitle = item.review.chapterTitle
     const oneIdea = [item.review.abstract, item.review.content]
@@ -428,7 +428,17 @@ function processIdeaData(ideaData) {
       chapterIdeaArray.push(oneIdea)
     }
   })
+
+  console.log(' 432: map = ', map)
   return map
+}
+
+function getRangeLeft(rangeData) {
+  if (!rangeData) {
+    return Number.MAX_SAFE_INTEGER
+  } else {
+    return parseInt(rangeData.split("-")[0])
+  }
 }
 
 function processBookmarkData(e) {
