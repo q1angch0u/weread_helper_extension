@@ -224,7 +224,6 @@ function shelfMakeBookPublic(bookIds) {
     return resp.json()
   }).then(data => {
 
-    console.log(' 208: data = ', JSON.stringify(data))
     bookIds.forEach(function(_id) {
       $(`#bookid-${_id} > .wr_bookCover > .wr_bookCover_privateTag`).remove()
     })
@@ -273,12 +272,9 @@ function sleep(ms) {
 }
 
 async function fetchNotes(bookIds) {
-  console.log(' 257: bookIds = ', JSON.stringify(bookIds))
   const userVid = await readLocalStorage('wrUserVid')
-  console.log(' 272: userVid = ', JSON.stringify(userVid))
 
   for (const bookId of bookIds) {
-    console.log(' 275: bookId = ', JSON.stringify(bookId))
     let bookmarkResp = await fetch(`https://weread.qq.com/web/book/bookmarklist?bookId=${bookId}&type=1`)
     let bookmarkData = await bookmarkResp.json()
     await sleep(500)
@@ -287,13 +283,10 @@ async function fetchNotes(bookIds) {
     let ideaData = await ideaResp.json()
 
     const bookTitle = bookmarkData.book.title
-    console.log(' 285: bookTitle = ', JSON.stringify(bookTitle))
 
     const bookmarkListLength = bookmarkData.updated.length;
-    console.log(' 288: bookmarkListLength = ', JSON.stringify(bookmarkListLength))
 
     const ideaDataTotalCount = ideaData.totalCount
-    console.log(' 296: ideaDataTotalCount = ', JSON.stringify(ideaDataTotalCount))
 
     if (Array.isArray(bookmarkData.updated) && bookmarkListLength && ideaDataTotalCount) {
       exportBookmarkAndIdeaMarkdownNote(bookmarkData, ideaData)
@@ -306,7 +299,7 @@ async function fetchNotes(bookIds) {
   }
 
   showToast('导出所有笔记完成')
-  console.log(' 298: 导出所有笔记完成')
+  console.log(' 298: all notes export done.')
 }
 
 function exportBookmarkAndIdeaMarkdownNote(bookmarkData, ideaData) {
@@ -362,7 +355,6 @@ function exportBookmarkMarkdownNote(bookmarkData) {
   const bookTitle = bookmarkData.book.title;
   showToast('开始导出 ' + bookTitle + ' markdown 笔记')
 
-  console.log(' 305: bookmarkData = ', JSON.stringify(bookmarkData))
   let t
   try {
     t = processBookmarkData(bookmarkData)
@@ -371,7 +363,6 @@ function exportBookmarkMarkdownNote(bookmarkData) {
     console.error(' error = ', error)
     return
   }
-  console.log(' 314: t = ', JSON.stringify(t))
 
   let context = "## ".concat(bookTitle, "\n\n **").concat(bookmarkData.book.author, "**\n\n");
 
@@ -421,7 +412,6 @@ function processIdeaData(ideaData) {
     return getRangeLeft(a.review.range) - getRangeLeft(b.review.range)
   })
 
-  console.log(' 419: ideaData = ', JSON.stringify(ideaData))
   const map = new Map();
 
   ideaData.reviews.forEach((item) => {
@@ -438,7 +428,6 @@ function processIdeaData(ideaData) {
     }
   })
 
-  console.log(' 432: map = ', map)
   return map
 }
 
@@ -1157,7 +1146,6 @@ $(document).ready(function() {
       }
     })
 
-    console.log(' 1043: bookIds = ', JSON.stringify(bookIds))
     if (bookIds.length > 0) {
       shelfMakeBookPublic(bookIds)
     }
@@ -1171,7 +1159,6 @@ $(document).ready(function() {
       }
     })
 
-    console.log(' 1057: bookIds = ', JSON.stringify(bookIds))
     if (bookIds.length === 0) {
       showToast('未选中任何书本，无法导出笔记')
       return
