@@ -298,7 +298,7 @@ async function fetchNotes(bookIds) {
 
   }
 
-  showToast('导出所有笔记完成')
+  window.alert('导出所有笔记完成');
   console.log(' 298: all notes export done.')
 }
 
