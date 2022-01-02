@@ -726,6 +726,7 @@ $(document).ready(function() {
             <div style="display: flex; flex-direction: row; margin-top: 5px;">
               <div id="webook_ui_1" style="background-color: #e2e2e4; width: 24px; height: 24px; margin: 0 5px; cursor: pointer;" data-color="#e2e2e4"></div>
               <div id="webook_ui_2" style="background-color: #e1dac7; width: 24px; height: 24px; margin: 0 5px; cursor: pointer;" data-color="#e1dac7"></div>
+              <div id="webook_ui_0" style="background-color: #ffffff; width: 24px; height: 24px; margin: 0 5px; cursor: pointer;" data-color="#ffffff"></div>
               <div id="webook_ui_3" style="background-color: #b3d6b4; width: 24px; height: 24px; margin: 0 5px; cursor: pointer;" data-color="#b3d6b4"></div>
               <div id="webook_ui_4" style="background-color: #ffc107; width: 24px; height: 24px; margin: 0 5px; cursor: pointer;" data-color="#ffc107"></div>
             </div>
@@ -855,6 +856,13 @@ $(document).ready(function() {
       $('#webook_screen_2_0').click(function() {
         setScreen(_def_max_width * 2.0)
         chrome.storage.local.set({'webook_screen': '2.0'})
+      })
+
+      $('#webook_ui_0').click(function(e) {
+        console.log('webook_ui_0')
+        let _c = $(this).data('color')
+        chrome.storage.local.set({'webook_ui': 'webook_ui_0'})
+        set_webook_ui(_c)
       })
 
       $('#webook_ui_1').click(function(e) {
