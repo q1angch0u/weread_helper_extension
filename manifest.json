@@ -19,10 +19,8 @@
   },
   "permissions": [
     "storage",
-    "cookies",
     "webRequest",
     "webRequestBlocking",
-    "ttsEngine",
     "tts",
     "*://i.weread.qq.com/*",
     "*://weread.qq.com/*",
