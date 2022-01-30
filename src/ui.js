@@ -136,15 +136,23 @@ function make_me_happy(t) {
 function shelfInsertCheckbox() {
   $('.shelfBook').each(function() {
     var href = $(this).attr('href')
+    console.log(' 139: href = ', JSON.stringify(href))
     if (href.startsWith('/web/reader/')) {
       var _key = href.replace('/web/reader/', '')
+      console.log(' 142: _key = ', JSON.stringify(_key))
+      // if (_key === "f66325405c4f7cf66f11365") {
+      //   window.open('http://www.baidu.com', '_blank')
+      // }
       if (shelfdict[_key]) {
+        $(this).click(function(){
+          window.open('http://www.baidu.com', '_blank')
+        })
         $(this).append($(`
         <div class="m_webook_shelf_checkbox" style="padding: 5px; display: flex; align-items: center; justify-content: center;">
           <input type="checkbox" data-id="${shelfdict[_key].bookId}" />
         </div>
         `))
-        $(this).attr('id', `bookid-${shelfdict[_key].bookId}`)
+        // $(this).attr('id', `bookid-${shelfdict[_key].bookId}`)
       }
     }
   })
@@ -1067,7 +1075,7 @@ $(document).ready(function() {
       if (mps.length == 0) return
 
       _(_.sortBy(mps, ['version'])).forEach(function(mp) {
-        $('.shelf_list').prepend($(`<a href="/web/reader/${make_me_happy(mp.bookId)}" class="shelfBook webook_mp" data-id="${mp.bookId}"><div class="wr_bookCover cover">${mp.secret ? '<span class="wr_bookCover_privateTag"></span>': ''}<!----><!----><img src="${mp.cover.replace('http://', 'https://')}" alt="书籍封面" class="wr_bookCover_img"><div class="wr_bookCover_border"></div><span class="wr_bookCover_decor wr_bookCover_gradientDecor wr_bookCover_borderDecor"></span></div><div class="title">${mp.title}</div><!----></a>`))
+        // $('.shelf_list').prepend($(`<a href="/web/reader/${make_me_happy(mp.bookId)}" class="shelfBook webook_mp" data-id="${mp.bookId}"><div class="wr_bookCover cover">${mp.secret ? '<span class="wr_bookCover_privateTag"></span>': ''}<!----><!----><img src="${mp.cover.replace('http://', 'https://')}" alt="书籍封面" class="wr_bookCover_img"><div class="wr_bookCover_border"></div><span class="wr_bookCover_decor wr_bookCover_gradientDecor wr_bookCover_borderDecor"></span></div><div class="title">${mp.title}</div><!----></a>`))
       })
 
       $('.webook_mp').click(function(e) {
@@ -1123,7 +1131,7 @@ $(document).ready(function() {
 
   $('.m_webook_shelf_admin').click(function() {
     let status = $(this).data('status')
-    if (status == 'close') {
+    if (status === 'close') {
       shelfInsertCheckbox()
       $('.m_shelf_admin > a.op').css('display', 'block')
       $(this).data('status', 'open')
