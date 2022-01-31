@@ -141,10 +141,17 @@ function shelfInsertCheckbox() {
       if (shelfdict[_key]) {
         $(this).append($(`
         <div class="m_webook_shelf_checkbox" style="padding: 5px; display: flex; align-items: center; justify-content: center;">
-          <input type="checkbox" data-id="${shelfdict[_key].bookId}" />
+          <input type="checkbox" id="shelf_cb_${shelfdict[_key].bookId}" data-id="${shelfdict[_key].bookId}" />
         </div>
         `))
         $(this).attr('id', `bookid-${shelfdict[_key].bookId}`)
+        $(this).on("click", function() {
+          if ($('.m_webook_shelf_admin').data('status') === "open") {
+            let currentCheckBox = $("#shelf_cb_" + shelfdict[_key].bookId)
+            currentCheckBox.prop("checked", !currentCheckBox.prop("checked"))
+            return false;
+          }
+        })
       }
     }
   })
